@@ -94,6 +94,7 @@ void QuickSort(int list2[], int left, int right) {
 }
 
 
+
 void  main()
 {
 	int list1[10] = { 1,7,4,8,3,5,0,9,2,6 };
