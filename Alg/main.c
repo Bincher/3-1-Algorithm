@@ -1,195 +1,159 @@
 #include <stdio.h>
-#include <math.h>
-#include <time.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
-void Merge(int list1[], int left, int mid, int right) {
-	int b1 = left;
-	int e1 = mid;
-	int b2 = mid + 1;
-	int e2 = right;
-	int list_sorted[100];
-	int index = 0;
+#define MAX_VERTICES 1000
+#define MAX_EDGES 100000
 
-	while (b1 <= e1 && b2 <= e2) {
-		if (list1[b1] < list1[b2]) {
-			list_sorted[index] = list1[b1];
-			b1++;
-			index++;
-		}
-		else {
-			list_sorted[index] = list1[b2];
-			b2++;
-			index++;
-		}
-	}
+// 간선 구조체
+typedef struct Edge {
+    int from, to, weight;
+} Edge;
 
-	while (b1 <= e1) {
-		list_sorted[index] = list1[b1];
-		b1++;
-		index++;
-	}
-
-	while (b2 <= e2) {
-		list_sorted[index] = list1[b2];
-		b2++;
-		index++;
-	}
-
-	for (int i = left; i <= right; i++) {
-		list1[i] = list_sorted[i - left];
-	}
-	
-	printf("합병 :[");
-	for (int i = left; i < mid + 1; i++)
-		printf(" %d ", list1[i]);
-	for (int i = mid + 1; i < right + 1; i++)
-		printf(" %d ", list1[i]);
-	printf("]\n");
-}
-
-void MergeSort(int list1[], int left, int right) {
-	if (left < right)
-	{
-		int mid = floor((left + right) / 2);
-		
-		printf("분할 :[");
-		for (int i = left; i < mid + 1; i++)
-			printf(" %d ", list1[i]);
-		printf("] [");
-		for (int i = mid + 1; i < right + 1; i++)
-			printf(" %d ", list1[i]);
-		printf("]\n");
-		MergeSort(list1, left, mid);
-		MergeSort(list1, mid + 1, right);
-		Merge(list1, left, mid, right);
-	}
-}
-void swap(int arr[], int x, int y) {
-	int temp = arr[x];
-	arr[x] = arr[y];
-	arr[y] = temp;
-}
-
-int partition(int list2[], int left, int right) {
-	int p = floor((left + right) / 2);
-	printf("피봇 선택 -> index : %d / num : %d\n", p, list2[p]);
-	swap(list2, left, p); 
-	printf("파티션 : [");
-	for (int i = left + 1; i < p + 1; i++)
-	{
-		printf(" %d ", list2[i]);
-	}
-	printf("] ");
-	printf("[");
-	for (int i = p + 1; i <= right; i++)
-	{
-		printf(" %d ", list2[i]);
-	}
-	printf("]\n");
-	int pivot = list2[left];
-	int i = left + 1;
-	int j = right;
-	while (i <= j) {
-		while (i <= right && list2[i] <= pivot) 
-			i++;
-		while (list2[j] > pivot) 
-			j--;
-		if (i < j)
-		{
-			printf("교환 : %d <-> %d\n", list2[i], list2[j]);
-			swap(list2, i, j);
-		}
-	}
-	swap(list2, left, j);
-
-	printf("중간 결과 : [");
-	for (int i = left; i < j; i++)
-	{
-		printf(" %d ", list2[i]);
-	}
-	printf("] [");
-	for (int i = j; i <= right; i++)
-	{
-		printf(" %d ", list2[i]);
-	}
-	printf("]\n");
-
-	return j;
-}
-
-void QuickSort(int list2[], int left, int right) {
-	if (left < right) {
-		int p = partition(list2, left, right);
-		QuickSort(list2, left, p - 1);
-		QuickSort(list2, p + 1, right);
-	}
-}
-
-
-void  main()
+int parent[MAX_VERTICES]; // 각 정점의 부모 저장
+int rank[MAX_VERTICES]; // 각 정점의 랭크 저장
+Edge edges[MAX_EDGES]; // 간선 저장
+Edge mst[MAX_VERTICES - 1]; // 최소 신장 트리 저장
+int graph_1[5][5] =
 {
-	int list1[10];
-	int choice;
-	int a = 1;
-	int list1_size = sizeof(list1) / sizeof(int);
-	srand(time(NULL));
-	while (a)
-	{
-		for (int i = 0; i < list1_size; i++)
-		{
-			list1[i] = rand() % 1000;
-		}
-		printf("합병 정렬 -> 1\n퀵 정렬 -> 2\n종료 -> 0\n번호 입럭 : ");
-		scanf("%d", &choice);
-		switch (choice) {
-		case 1:
-			printf("<<<<<< 합병 정렬 시작 >>>>>>\n");
-			printf("기존 :[");
-			for (int i = 0; i < list1_size; i++)
-			{
-				printf(" %d ", list1[i]);
-			}
-			printf("]\n");
+    {0, 2, 0, 6, 0},
+    {2, 0, 3, 8, 5},
+    {0, 3, 0, 0, 7},
+    {6, 8, 0, 0, 9},
+    {0, 5, 7, 9, 0}
+};
+int graph_2[6][6] =
+{
+    {0, 7, 9, 0, 0, 14},
+    {7, 0, 10, 15, 0, 0},
+    {9, 10, 0, 11, 0, 2},
+    {0, 15, 11, 0, 6, 0},
+    {0, 0, 0, 6, 0, 9},
+    {14, 0, 2, 0, 9, 0}
+};
 
-			MergeSort(list1, 0, list1_size - 1);
+// collapsing find : 루트를 찾는 과정에서 경로를 압축
+int collapsing_find(int i) {
+    int root = i; // 시작정점 및 끝정점
+    // 부모 노드 설정
+    while (root != parent[root]) { // 현재 노드가 부모 노드가 아니면?
+        root = parent[root]; // 현재 노드가 부모 노드에 도착할때까지 반복
+    }
+    while (i != root) { // i가 루트 노드가 아니면
+        int tmp = parent[i]; // i에서 i의 부모노드로 이동
+        parent[i] = root; // 부모노드는 루트노드로
+        i = tmp; 
+    }
+    return root; // 루트 노드를 반환
+}
 
-			printf("결과 :[");
-			for (int i = 0; i < list1_size; i++)
-			{
-				printf(" %d ", list1[i]);
-			}
-			printf("]\n");
-			printf("<<<<<< 합병 정렬 종료 >>>>>>\n");
-			printf("<<<<<< 원소 초기화 >>>>>>\n");
-			break;
-		case 2:
-			printf("<<<<<< 퀵 정렬 시작 >>>>>>\n");
-			printf("기존 :[");
-			for (int i = 0; i < list1_size; i++)
-			{
-				printf(" %d ", list1[i]);
-			}
-			printf("]\n");
+// weighted union : 트리 합치는 과정에서 rank값이 작은 트리를 큰 트리의 서버트리에 병합
+void weighted_union(int i, int j) {
+    int root_i = collapsing_find(i); // 시작 정점이 있는 노드의 루트 노드 반환
+    int root_j = collapsing_find(j); // 끝 정점이 있는 노드의 루트 노드 반환
+    if (root_i == root_j) return; // 루트 노드가 같으면 같은 집합이므로 종료
 
-			QuickSort(list1, 0, list1_size - 1);
+    if (rank[root_i] > rank[root_j]) { // 랭크값이 시작 정점이 있는 집합이 더 크면?
+        parent[root_j] = root_i; // root_j의 부모 노드에 root_i 연결
+    }
+    else { // 랭크값이 끝 정점이 있는 집합이 더 크거나 같으면?
+        parent[root_i] = root_j; // root_i의 부모 노드에 root_j 연결
+        if (rank[root_i] == rank[root_j]) { // 만약 크기가 같았으면?
+            rank[root_j]++; 
+        }
+    }
+}
 
-			printf("결과 :[");
-			for (int i = 0; i < list1_size; i++)
-			{
-				printf(" %d ", list1[i]);
-			}
-			printf("]\n");
-			printf("<<<<<< 퀵 정렬 종료 >>>>>>\n");
-			printf("<<<<<< 원소 초기화 >>>>>>\n");
-			break;
-		case 0:
-			a = 0;
-			printf("<<<<<< 종료 >>>>>>");
-			break;
-		}
-	}
-	
-	
+// 간선 비교 함수
+int compare(const void* a, const void* b) {
+    Edge* edge1 = (Edge*)a;
+    Edge* edge2 = (Edge*)b;
+    return edge1->weight - edge2->weight;
+}
 
-	
+// Kruskal 알고리즘 함수
+void kruskal(int n, int m, Edge* edges, Edge* mst) {
+    
+    // 집합 별 부모 노드와 rank값을 초기화
+    for (int i = 0; i < n; i++) {
+        parent[i] = i; // 부모 노드는 본인으로 초기화
+        rank[i] = 0; // 각 집합의 값은 0으로 초기화
+    }
+
+    // 간선을 가중치 오름차순으로 정렬
+    qsort(edges, m, sizeof(Edge), compare); 
+
+    int mst_size = 0; // mst에 존재하는 간선의 개수
+    for (int i = 0; i < m; i++) { // 그래프의 간선 개수 만큼 진행
+        Edge e = edges[i]; // (정렬된) 첫 번째 간선부터
+        if (collapsing_find(e.from) != collapsing_find(e.to)) { // 사이클이 아니면 MST에 간선 추가
+            mst[mst_size++] = e; // 간선 배열에 간선 추가
+            weighted_union(e.from, e.to); // weighted union을 이용해 트리 병합
+        }
+        else { // 사이클이면 해당 메시지를 출력
+            printf("%d - %d는 사이클을 형성합니다\n", e.from, e.to);
+        }
+    }
+
+    // 최소 신장 트리의 간선 정보 출력
+    printf("최소 신장 트리의 간선 정보:\n");
+    for (int i = 0; i < mst_size; i++) {
+        Edge e = mst[i]; 
+        printf("%d - %d (%d)\n", e.from, e.to, e.weight);
+    }
+}
+
+int main() {
+    int n; // 정점 개수
+    int m; // 간선 개수
+    Edge* edges; // 간선 : 시작위치, 끝위치, 가중치
+    int index = 0; // 두 그래프 구분
+
+    // 그래프 1
+    n = 5;
+    m = 7;
+    edges = (Edge*)malloc(sizeof(Edge) * m); // 그래프 간선 저장 공간
+
+    // 간선 정보 저장
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (graph_1[i][j] != 0) { // 간선 존재할시 시작위치 i, 끝위치 j, 가중치 저장
+                Edge e; // 간선 하나의 정보 보관
+                e.from = i; // 간선 시작 위치
+                e.to = j; // 간선 끝 위치
+                e.weight = graph_1[i][j]; // 간선 가중치
+                edges[index++] = e; // 간선을 보관하는 배열에 구조체 저장
+            }
+        }
+    }
+
+    // Kruskal 실행
+    printf("[그래프 1]\n");
+    kruskal(n, m, edges, mst);
+
+    // 그래프 2
+    n = 6;
+    m = 9;
+    edges = (Edge*)malloc(sizeof(Edge) * m);
+
+    // 간선 정보 저장
+    index = 0;
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (graph_2[i][j] != 0) {
+                Edge e;
+                e.from = i;
+                e.to = j;
+                e.weight = graph_2[i][j];
+                edges[index++] = e;
+            }
+        }
+    }
+
+    // Kruskal 알고리즘 실행
+    printf("\n[그래프 2]\n");
+    kruskal(n, m, edges, mst);
+
+    free(edges);
+    return 0;
 }
