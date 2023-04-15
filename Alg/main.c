@@ -87,11 +87,12 @@ void kruskal(int n, int m, Edge* edges, Edge* mst) {
     for (int i = 0; i < m; i++) { // 그래프의 간선 개수 만큼 진행
         Edge e = edges[i]; // (정렬된) 첫 번째 간선부터
         if (collapsing_find(e.from) != collapsing_find(e.to)) { // 사이클이 아니면 MST에 간선 추가
+            printf("O : %d - %d 간선 연결\n", e.from, e.to);
             mst[mst_size++] = e; // 간선 배열에 간선 추가
             weighted_union(e.from, e.to); // weighted union을 이용해 트리 병합
         }
         else { // 사이클이면 해당 메시지를 출력
-            printf("%d - %d는 사이클을 형성합니다\n", e.from, e.to);
+            printf("X : %d - %d는 사이클을 형성합니다\n", e.from, e.to);
         }
     }
 
@@ -128,7 +129,7 @@ int main() {
     }
 
     // Kruskal 실행
-    printf("[그래프 1]\n");
+    printf("#######[그래프 1]##################\n");
     kruskal(n, m, edges, mst);
 
     // 그래프 2
@@ -151,7 +152,7 @@ int main() {
     }
 
     // Kruskal 알고리즘 실행
-    printf("\n[그래프 2]\n");
+    printf("#######[그래프 2]##################\n");
     kruskal(n, m, edges, mst);
 
     free(edges);
