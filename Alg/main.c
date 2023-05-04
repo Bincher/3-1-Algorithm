@@ -3,10 +3,13 @@
 
 void main()
 {
+	// C人 n 益軒壱 item 滴奄 痕井 政疑旋生稽
+	// K亜 庚薦
+	// DISPLAY 岨 希 重井床壱
 	int item[4][2] =
 	{
 		{10, 5},
-		{40, 4},
+		{20, 4},
 		{30, 6},
 		{50, 3}
 	}; // 亜帖, 巷惟
@@ -34,13 +37,31 @@ void main()
 		}
 	}
 
-	for (int i = 0; i <= n; i++)
+	printf("！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！\n");
+	for (int i = 0; i <= n + 1; i++)
 	{
-		for (int j = 0; j <= C; j++)
+		for (int j = 0; j <= C + 1; j++)
 		{
-			printf("%d ", K[i][j]);
+			if (i == 0)
+				if (j == 0)
+					printf("|遂勲|");
+				else
+					printf("%3d|", j - 1);
+			else
+				if (j == 0)
+				{
+					if (i == 1)
+					{
+						printf("|弘闇|");
+					}
+					else
+						printf("|i=%d |", i - 1);
+				}
+				else 
+					printf("%3d|", K[i - 1][j - 1]);
 		}
 		printf("\n");
+		printf("！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！\n");
 	}
 	printf("\n");
 }
