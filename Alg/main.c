@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 
+
 void main()
 {
 	// C人 n 益軒壱 item 滴奄 痕井 政疑旋生稽
@@ -26,17 +27,29 @@ void main()
 	{
 		for (int w = 1; w <= C; w++)
 		{
+			printf("K[%d,%d]:", i, w);
 			if (item[i - 1][1] > w)
+			{
 				K[i][w] = K[i - 1][w];
+				printf("%d ＝ ", K[i][w]);
+			}
 			else
+			{
 				if (K[i - 1][w] > K[i - 1][w - item[i - 1][1]] + item[i - 1][0])
+				{
 					K[i][w] = K[i - 1][w];
+				}
 				else
+				{
 					K[i][w] = K[i - 1][w - item[i - 1][1]] + item[i - 1][0];
-			
+				}
+				printf("max{%d,%d} = %d ＝ ", K[i - 1][w], K[i - 1][w - item[i - 1][1]] + item[i - 1][0], K[i][w]);
+			}
 		}
+		printf("\n");
 	}
-
+	
+	printf("衣引\n");
 	printf("！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！\n");
 	for (int i = 0; i <= n + 1; i++)
 	{
